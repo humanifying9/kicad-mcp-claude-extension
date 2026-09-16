@@ -15,8 +15,7 @@ extension, drag and drop MCP install Claude Desktop.
 ## If you're here because...
 
 - Claude Desktop's **Settings → Developer** page shows nothing for an MCP
-  server you added to `claude_desktop_config.json` — not even a "failed"
-  or error state, it just doesn't exist.
+  server you added to `claude_desktop_config.json` and just doesnt exist
 - The server works fine when you run it yourself in a terminal, but Claude
   Desktop never launches it, and no `mcp-server-*.log` file ever appears.
 - You've confirmed the JSON is valid, the paths are correct, and you've
@@ -36,11 +35,9 @@ situation.
 ## Why
 
 KiCAD-MCP-Server's README has you register it by hand-editing
-`claude_desktop_config.json`. On some Claude Desktop builds (the newer
-Cowork-enabled ones), that file is silently ignored for manually-added
-servers — no error, nothing in Settings → Developer, it just never starts.
+`claude_desktop_config.json`. On some Claude Desktop the file is never reloads and the MCP never comes on.
 Those builds register local servers through **Settings → Extensions**
-instead, by installing a `.dxt`/`.mcpb` package.
+which is done by installing a `.dxt`/`.mcpb` package.
 
 If editing `claude_desktop_config.json` already works for you (check
 Settings → Developer after restarting), you don't need this repo — just
@@ -55,13 +52,10 @@ follow KiCAD-MCP-Server's own instructions.
    `command` is a bare name (e.g. `"node"`) rather than an absolute path,
    it resolves one — Claude's extension host doesn't reliably inherit your
    user `PATH`, so a bare command can fail to start with zero error output.
-3. The result, `kicad-mcp.dxt`, gets dragged into Claude Desktop's
+3. `kicad-mcp.dxt`, goes into Claude Desktop's
    Extensions settings.
 
 ## Install — step by step
-
-Each step tells you what to run and what you should see before moving on.
-If what you see doesn't match, stop there — the next step will fail too.
 
 ### Step 1 — Set up KiCAD-MCP-Server
 
