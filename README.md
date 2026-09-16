@@ -4,6 +4,35 @@ Packages [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Ser
 as a Claude Desktop **extension** (`.dxt`/`.mcpb`) so Claude Desktop actually
 detects and runs it.
 
+**Keywords:** Claude Desktop MCP server not showing up, MCP server not
+detected, mcpServers silently ignored, claude_desktop_config.json not
+working, Claude Desktop Settings Developer empty, KiCAD MCP server not
+connecting to Claude, Claude Desktop Extensions vs claude_desktop_config,
+node command silently fails Claude Desktop, Claude Desktop Windows MSIX
+MCP bug, Claude Cowork desktop app local MCP server, .dxt .mcpb Claude
+extension, drag and drop MCP install Claude Desktop.
+
+## If you're here because...
+
+- Claude Desktop's **Settings → Developer** page shows nothing for an MCP
+  server you added to `claude_desktop_config.json` — not even a "failed"
+  or error state, it just doesn't exist.
+- The server works fine when you run it yourself in a terminal, but Claude
+  Desktop never launches it, and no `mcp-server-*.log` file ever appears.
+- You've confirmed the JSON is valid, the paths are correct, and you've
+  fully restarted Claude Desktop (killed the process, not just closed the
+  window) — and it still doesn't show up.
+- Specifically: **KiCAD-MCP-Server isn't showing up / isn't connecting in
+  Claude Desktop**, even though you followed its README.
+- You're on a newer, Cowork-enabled Claude Desktop build (Windows), and
+  other local MCP servers on your machine only work because they were
+  installed as an **extension** (Settings → Extensions), not by editing
+  JSON.
+
+If that's you, skip straight to [Install](#install--step-by-step) — this
+repo builds the `.dxt` package that actually gets picked up in that
+situation.
+
 ## Why
 
 KiCAD-MCP-Server's README has you register it by hand-editing
