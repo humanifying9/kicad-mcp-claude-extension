@@ -1,0 +1,24 @@
+{
+  "manifest_version": "0.3",
+  "name": "kicad-mcp-server",
+  "version": "1.0.0",
+  "description": "KiCAD PCB Design Assistant MCP Server - control KiCAD schematics, PCB layout, routing, DRC/ERC, and exports from Claude.",
+  "display_name": "KiCAD",
+  "author": {
+    "name": "__AUTHOR_NAME__"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "index.js",
+    "mcp_config": {
+      "command": "__NODE_EXE_PATH__",
+      "args": ["__KICAD_MCP_SERVER_DIST_INDEX__"],
+      "env": {
+        "PYTHONPATH": "__KICAD_PYTHON_SITE_PACKAGES__",
+        "KICAD_PYTHON": "__KICAD_PYTHON_EXE__",
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
