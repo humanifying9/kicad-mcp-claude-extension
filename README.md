@@ -29,44 +29,104 @@ follow KiCAD-MCP-Server's own instructions.
 3. The result, `kicad-mcp.dxt`, gets dragged into Claude Desktop's
    Extensions settings.
 
-## Install
+## Install — step by step
 
-**1. Set up KiCAD-MCP-Server first**, if you haven't:
+Each step tells you what to run and what you should see before moving on.
+If what you see doesn't match, stop there — the next step will fail too.
+
+### Step 1 — Set up KiCAD-MCP-Server
+
+Skip this if you've already done it.
+
 ```powershell
 git clone https://github.com/mixelpixx/KiCAD-MCP-Server.git
 cd KiCAD-MCP-Server
 .\setup-windows.ps1
 ```
-This must finish successfully and produce `windows-mcp-config.json`.
 
-**2. Build the extension:**
+Let it run to the end. It should finish with `[OK] Setup completed
+successfully!` and a **"Configuration Preview"** block printed to the
+screen — that's your server's `command`/`args`/`env`, auto-detected for
+this machine. You don't need to copy that block anywhere yourself; the
+next steps read it straight from the file it just wrote.
+
+Confirm the file exists:
+
+```powershell
+Get-Content .\windows-mcp-config.json
+```
+
+You should see JSON with a `"kicad"` entry under `"mcpServers"`. If this
+command errors with "file not found," `setup-windows.ps1` didn't finish —
+scroll up in its output for the failure and fix that first.
+
+### Step 2 — Build the extension from that config
+
 ```powershell
 git clone https://github.com/humanifying9/kicad-mcp-claude-extension.git
 cd kicad-mcp-claude-extension
 .\build.ps1 -KicadMcpServerPath "C:\path\to\your\KiCAD-MCP-Server"
 ```
-Produces `kicad-mcp.dxt` in this folder.
 
-**3. Install it:** Claude Desktop → Settings → Extensions → Advanced
-settings → drag `kicad-mcp.dxt` onto the drop zone.
+(Use the actual path to the folder from Step 1.)
 
-**4. If it doesn't start immediately**, force a clean restart:
+Watch the output — it should print `[OK] Found generated config: ...`,
+then `[OK] Wrote manifest for this machine:` followed by the actual
+manifest JSON it built (this is your Step 1 config, adapted). Check that
+block: the `command` field should be a full path ending in `node.exe`,
+not just the word `node`. It should finish with:
+
+```
+=== Done ===
+Built: ...\kicad-mcp.dxt
+```
+
+Confirm the file landed:
+
+```powershell
+Get-Item .\kicad-mcp.dxt
+```
+
+### Step 3 — Install it in Claude Desktop
+
+Open Claude Desktop → **Settings → Extensions → Advanced settings**. Drag
+`kicad-mcp.dxt` onto the **"Drag .MCPB or .DXT files here to install"**
+box.
+
+It should appear under "Installed on your computer." If it doesn't, redo
+the drag — sometimes the drop target needs a second attempt.
+
+### Step 4 — Restart Claude Desktop
+
+Extensions can need a full restart, not just closing the window:
+
 ```powershell
 Get-Process claude -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
+Get-Process claude -ErrorAction SilentlyContinue
 ```
-then reopen Claude Desktop and recheck Settings → Extensions.
 
-**5. Verify:** in a new chat, ask Claude to open or create a KiCAD project.
-If it can call KiCAD tools instead of saying it has none, it worked.
+That last command should print nothing — confirming Claude Desktop is
+fully closed. Then reopen it from the Start Menu.
+
+### Step 5 — Verify
+
+Back in Settings → Extensions, `kicad-mcp-server` should now show as
+installed and running, not just listed.
+
+Then, in a new Claude chat, ask something like *"do you have KiCAD
+tools available?"* or *"create a new KiCAD project"*. If Claude can call
+KiCAD tools instead of saying it doesn't have any, you're done.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | PowerShell won't run either `.ps1` script | As admin: `Set-ExecutionPolicy RemoteSigned -Scope LocalMachine` |
-| `windows-mcp-config.json` not found | Run `setup-windows.ps1` in KiCAD-MCP-Server first — it hasn't completed yet |
-| Extension installed but no KiCAD tools appear | Force-quit and reopen Claude Desktop (step 4 above) |
-| Still nothing after that | Check the paths inside `build\manifest.json` still exist — if you moved either repo, re-run `build.ps1` |
+| `windows-mcp-config.json` not found (Step 1) | `setup-windows.ps1` didn't complete — re-run it and read its output for the actual failure |
+| `build.ps1` says it can't find `windows-mcp-config.json` (Step 2) | You passed the wrong `-KicadMcpServerPath`, or Step 1 wasn't finished there yet |
+| Extension installed but no KiCAD tools appear (Step 5) | Redo Step 4 (force-quit, confirm the process list is empty, reopen) |
+| Still nothing after that | Open `build\manifest.json` (from Step 2) and confirm every path in it still exists on disk — if you moved either repo folder, re-run `build.ps1` |
 
 ## What's in the `.dxt`
 
