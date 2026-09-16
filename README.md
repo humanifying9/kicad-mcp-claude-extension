@@ -1,162 +1,116 @@
 # kicad-mcp-claude-extension
 
-Packages [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server)
-as a Claude Desktop **extension** (`.dxt`/`.mcpb`) so Claude Desktop actually
-detects and runs it.
+I ran into this while trying to get [KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server)
+working with Claude Desktop, and it took way longer than it should have to
+figure out what was actually going on — so I'm sharing the fix.
 
-**Keywords:** Claude Desktop MCP server not showing up, MCP server not
-detected, mcpServers silently ignored, claude_desktop_config.json not
-working, Claude Desktop Settings Developer empty, KiCAD MCP server not
-connecting to Claude, Claude Desktop Extensions vs claude_desktop_config,
-node command silently fails Claude Desktop, Claude Desktop Windows MSIX
-MCP bug, Claude Cowork desktop app local MCP server, .dxt .mcpb Claude
-extension, drag and drop MCP install Claude Desktop.
+## What's going on
 
-## If you're here because...
+KiCAD-MCP-Server's README tells you to add it to Claude Desktop by editing
+`claude_desktop_config.json`. That's the normal way to add a local MCP
+server, and it works for a lot of people.
 
-- Claude Desktop's **Settings → Developer** page shows nothing for an MCP
-  server you added to `claude_desktop_config.json` and just doesnt exist
-- The server works fine when you run it yourself in a terminal, but Claude
-  Desktop never launches it, and no `mcp-server-*.log` file ever appears.
-- You've confirmed the JSON is valid, the paths are correct, and you've
-  fully restarted Claude Desktop (killed the process, not just closed the
-  window) — and it still doesn't show up.
-- Specifically: **KiCAD-MCP-Server isn't showing up / isn't connecting in
-  Claude Desktop**, even though you followed its README.
-- You're on a newer, Cowork-enabled Claude Desktop build (Windows), and
-  other local MCP servers on your machine only work because they were
-  installed as an **extension** (Settings → Extensions), not by editing
-  JSON.
+It didn't work for me. I added the server, fully restarted Claude Desktop
+(killed the process and reopened it, more than once), and it just...
+never showed up. Not an error, not "failed" in Settings → Developer,
+nothing at all. The server ran completely fine when I started it myself
+in a terminal, so I knew it wasn't broken — Claude Desktop just wasn't
+picking it up.
 
-If that's you, skip straight to [Install](#install--step-by-step) — this
-repo builds the `.dxt` package that actually gets picked up in that
-situation.
-
-## Why
-
-KiCAD-MCP-Server's README has you register it by hand-editing
-`claude_desktop_config.json`. On some Claude Desktop the file is never reloads and the MCP never comes on.
-Those builds register local servers through **Settings → Extensions**
-which is done by installing a `.dxt`/`.mcpb` package.
+Turns out on newer, Cowork-enabled Claude Desktop builds, local servers
+get registered a different way now: through Settings → Extensions, by
+installing a `.dxt`/`.mcpb` package, not by hand-editing that config file.
+Editing the JSON directly just gets silently ignored on these builds,
+with zero indication anything went wrong.
 
 If editing `claude_desktop_config.json` already works for you (check
-Settings → Developer after restarting), you don't need this repo — just
-follow KiCAD-MCP-Server's own instructions.
+Settings → Developer after a restart), you don't need any of this — just
+follow KiCAD-MCP-Server's normal instructions.
 
-## How it works
+## What this repo does
 
-1. `setup-windows.ps1` (from KiCAD-MCP-Server) detects your KiCAD/Node/Python
-   paths and writes `windows-mcp-config.json`.
-2. This repo's `build.ps1` reads that file and repackages its `kicad`
-   server entry as a `.dxt`. Its only real adaptation: if the detected
-   `command` is a bare name (e.g. `"node"`) rather than an absolute path,
-   it resolves one — Claude's extension host doesn't reliably inherit your
-   user `PATH`, so a bare command can fail to start with zero error output.
-3. `kicad-mcp.dxt`, goes into Claude Desktop's
-   Extensions settings.
+It takes the config that KiCAD-MCP-Server's own `setup-windows.ps1`
+script already generates for your machine — it auto-detects your KiCAD,
+Node, and Python paths, so there's no reason to redo that work — and
+repackages it as a `.dxt` you can drag into Claude Desktop.
 
-## Install — step by step
+The one thing I actually had to fix on top of what that script generates:
+it sets `"command": "node"` instead of the full path to `node.exe`.
+That's fine when you run things yourself from a terminal where `node` is
+on your PATH, but Claude Desktop's extension host doesn't seem to
+inherit that PATH, so the bare command name silently fails to launch.
+`build.ps1` resolves it to an absolute path for you.
 
-### Step 1 — Set up KiCAD-MCP-Server
+## How to use it
 
-Skip this if you've already done it.
-
+**1. Set up KiCAD-MCP-Server first, if you haven't already:**
 ```powershell
 git clone https://github.com/mixelpixx/KiCAD-MCP-Server.git
 cd KiCAD-MCP-Server
 .\setup-windows.ps1
 ```
+Let it finish. It should end with `[OK] Setup completed successfully!`,
+and it'll have written `windows-mcp-config.json` in that folder — that's
+what the next step reads from.
 
-Let it run to the end. It should finish with `[OK] Setup completed
-successfully!` and a **"Configuration Preview"** block printed to the
-screen — that's your server's `command`/`args`/`env`, auto-detected for
-this machine. You don't need to copy that block anywhere yourself; the
-next steps read it straight from the file it just wrote.
-
-Confirm the file exists:
-
-```powershell
-Get-Content .\windows-mcp-config.json
-```
-
-You should see JSON with a `"kicad"` entry under `"mcpServers"`. If this
-command errors with "file not found," `setup-windows.ps1` didn't finish —
-scroll up in its output for the failure and fix that first.
-
-### Step 2 — Build the extension from that config
-
+**2. Clone this repo and build the extension:**
 ```powershell
 git clone https://github.com/humanifying9/kicad-mcp-claude-extension.git
 cd kicad-mcp-claude-extension
 .\build.ps1 -KicadMcpServerPath "C:\path\to\your\KiCAD-MCP-Server"
 ```
+This spits out `kicad-mcp.dxt` in the folder. Worth glancing at the
+output — it prints the manifest it built, and the `command` field in
+there should be a full path ending in `node.exe`, not just `node`.
 
-(Use the actual path to the folder from Step 1.)
+**3. Open Claude Desktop → Settings → Extensions → Advanced settings,
+and drag `kicad-mcp.dxt` onto the drop zone.**
 
-Watch the output — it should print `[OK] Found generated config: ...`,
-then `[OK] Wrote manifest for this machine:` followed by the actual
-manifest JSON it built (this is your Step 1 config, adapted). Check that
-block: the `command` field should be a full path ending in `node.exe`,
-not just the word `node`. It should finish with:
-
-```
-=== Done ===
-Built: ...\kicad-mcp.dxt
-```
-
-Confirm the file landed:
-
+**4. Restart Claude Desktop properly** — closing the window isn't
+always enough:
 ```powershell
-Get-Item .\kicad-mcp.dxt
+Get-Process claude -ErrorAction SilentlyContinue | Stop-Process -Force
 ```
+Then reopen it from the Start Menu.
 
-### Step 3 — Install it in Claude Desktop
+**5. Check it worked** — Settings → Extensions should show it installed,
+and in a new chat you can ask Claude something like "do you have KiCAD
+tools available?" or just ask it to open a KiCAD project.
 
-Open Claude Desktop → **Settings → Extensions → Advanced settings**. Drag
-`kicad-mcp.dxt` onto the **"Drag .MCPB or .DXT files here to install"**
-box.
+## If it still doesn't work
 
-It should appear under "Installed on your computer." If it doesn't, redo
-the drag — sometimes the drop target needs a second attempt.
+- PowerShell refuses to run the scripts at all: `Set-ExecutionPolicy
+  RemoteSigned -Scope LocalMachine` (as admin).
+- `windows-mcp-config.json` is missing: `setup-windows.ps1` didn't
+  finish — scroll up in its output to see why.
+- It's installed but no KiCAD tools show up: redo the restart in step 4,
+  making sure the process is actually killed first, not just the window
+  closed.
+- Still nothing: open `build\manifest.json` and check every path in it
+  actually exists — if you moved either repo folder after building,
+  you'll need to rebuild.
 
-### Step 4 — Restart Claude Desktop
+## What's actually in the .dxt
 
+Just a zip with `manifest.json` at the root. `build.ps1` generates that
+file for your machine — it's gitignored, since it has your username and
+absolute paths baked in, so it's not something to commit. There's also a
+one-line `index.js` stub in there that never actually runs; it just
+satisfies a required field in the package format. The real server is
+your own built `KiCAD-MCP-Server\dist\index.js`, which the manifest
+points to directly.
 
-That last command should print nothing — confirming Claude Desktop is
-fully closed. Then reopen it from the Start Menu.
+## Credit
 
-### Step 5 — Verify
-
-Back in Settings → Extensions, `kicad-mcp-server` will show up as running
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| PowerShell won't run either `.ps1` script | As admin: `Set-ExecutionPolicy RemoteSigned -Scope LocalMachine` |
-| `windows-mcp-config.json` not found (Step 1) | `setup-windows.ps1` didn't complete — re-run it and read its output for the actual failure |
-| `build.ps1` says it can't find `windows-mcp-config.json` (Step 2) | You passed the wrong `-KicadMcpServerPath`, or Step 1 wasn't finished there yet |
-| Extension installed but no KiCAD tools appear (Step 5) | Redo Step 4 (force-quit, confirm the process list is empty, reopen) |
-| Still nothing after that | Open `build\manifest.json` (from Step 2) and confirm every path in it still exists on disk — if you moved either repo folder, re-run `build.ps1` |
-
-## What's in the `.dxt`
-
-A `.dxt` is just a zip with `manifest.json` at its root. This one has:
-- `manifest.json` — generated by `build.ps1`, **not committed** (contains
-  your machine's absolute paths and username; see `.gitignore`)
-- `index.js` — a one-line stub required by the package format, never
-  actually executed. The real server is your built
-  `KiCAD-MCP-Server\dist\index.js`, referenced by absolute path inside
-  `manifest.json`.
-
-## Credits
-
-All KiCAD functionality is [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server).
-
+All the actual KiCAD functionality is
+[mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server) —
+this repo doesn't touch that code, it just repackages the config it
+already generates so Claude Desktop can actually find it.
 
 ## Disclaimer
 
-MIT licensed, provided as-is. This is a workaround for a Claude Desktop
-packaging quirk observed on one build, not an official installation
-method — it may become unnecessary, or stop working, as Claude Desktop
-changes. AI-generated PCB/schematic suggestions from the underlying server
-don't replace engineering review — see KiCAD-MCP-Server's own disclaimer.
+MIT licensed, use at your own risk. This is a workaround for a Claude
+Desktop quirk I hit on one specific build — it might stop being
+necessary (or stop working) as Claude Desktop changes. And as always:
+AI-suggested PCB/schematic changes from the underlying server aren't a
+substitute for actually checking your own designs.
