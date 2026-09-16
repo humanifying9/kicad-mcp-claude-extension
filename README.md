@@ -121,26 +121,13 @@ the drag — sometimes the drop target needs a second attempt.
 
 ### Step 4 — Restart Claude Desktop
 
-Extensions can need a full restart, not just closing the window:
-
-```powershell
-Get-Process claude -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 2
-Get-Process claude -ErrorAction SilentlyContinue
-```
 
 That last command should print nothing — confirming Claude Desktop is
 fully closed. Then reopen it from the Start Menu.
 
 ### Step 5 — Verify
 
-Back in Settings → Extensions, `kicad-mcp-server` should now show as
-installed and running, not just listed.
-
-Then, in a new Claude chat, ask something like *"do you have KiCAD
-tools available?"* or *"create a new KiCAD project"*. If Claude can call
-KiCAD tools instead of saying it doesn't have any, you're done.
-
+Back in Settings → Extensions, `kicad-mcp-server` will show up as running
 ## Troubleshooting
 
 | Problem | Fix |
@@ -164,8 +151,7 @@ A `.dxt` is just a zip with `manifest.json` at its root. This one has:
 ## Credits
 
 All KiCAD functionality is [mixelpixx/KiCAD-MCP-Server](https://github.com/mixelpixx/KiCAD-MCP-Server).
-This repo doesn't modify it — it only repackages its generated config for
-Claude Desktop's extension installer.
+
 
 ## Disclaimer
 
